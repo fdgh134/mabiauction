@@ -2,55 +2,59 @@ import { useState } from "react";
 import { searchAuctionItems, AuctionItem } from "../services/mabinogiApi";
 import type { JSX } from "react";
 
-export default function SearchAuction(): JSX.Element {
+interface SearchAuctionProps {
+  onSearchComplete: (results: AuctionItem[], errorMsg?: string) => void;
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  setError: React.Dispatch<React.SetStateAction<string | null>>;
+}
+
+export default function SearchAuction({
+  onSearchComplete,
+  setLoading,
+  setError,
+}: SearchAuctionProps): JSX.Element {
   const [keyword, setKeyword] = useState<string>("");
-  const [searchResults, setSearchResults] = useState<AuctionItem[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleSearch = async () => {
     if (!keyword.trim()) {
       setError("검색어를 입력하세요.");
       return;
     }
-
     setLoading(true);
     setError(null);
-
-    const data = await searchAuctionItems(keyword);
-
-    if (data.length === 0) {
-      setError("검색 결과가 없습니다.");
+    try {
+      const data = await searchAuctionItems(keyword);
+      if (data.length === 0) {
+        onSearchComplete([], "검색 결과가 없습니다.");
+      } else {
+        onSearchComplete(data);
+      }
+    } catch (err) {
+      console.error(err);
+      onSearchComplete([], "검색 중 오류 발생");
     }
-
-    setSearchResults(data);
     setLoading(false);
   };
 
   return (
     <>
-      <div>
-        <h2>경매장 검색</h2>
-        <input
-          type="text"
-          placeholder="아이템 이름 입력"
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-        />
-        <button onClick={handleSearch}>검색</button>
-
-        {loading && <p>검색 중...</p>}
-        {error && !loading && <p>{error}</p>}
-
-        {!error && searchResults.length > 0 && (
-          <ul>
-            {searchResults.map((item) => (
-              <li key={item.itemId}>
-                <strong>{item.itemName}</strong> - {item.price} Gold
-              </li>
-            ))}
-          </ul>
-        )}
+      <div className="p-4">
+        <h2 className="text-2xl font-bold mb-4">경매장 검색</h2>
+        <div className="flex items-center mb-4 gap-2">
+          <input
+            type="text"
+            placeholder="아이템 이름 입력"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            className="border border-gray-300 rounded px-3 py-2 w-64"
+          />
+          <button
+            onClick={handleSearch}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+          >
+            검색
+          </button>
+        </div>
       </div>
     </>
   );

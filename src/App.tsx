@@ -1,14 +1,12 @@
-import SearchAuction from "./components/SearchAuction";
-import AuctionList from "./components/AuctionList";
+import MabinogiAuctionPage from "./components/MabiAuctionPage"
 
 function App() {
 
   return (
-    <>
-    <h1>마비노기 경매장</h1>
-      <SearchAuction />
-      <AuctionList />
-    </>
+    <div className="max-w-[1440px] mx-auto p-4">
+      <h1>마비노기 경매장</h1>
+      <MabinogiAuctionPage />
+    </div>
   )
 }
 

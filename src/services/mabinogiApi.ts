@@ -1,10 +1,31 @@
 const API_BASE_URL = "https://open.api.nexon.com/mabinogi/v1/auction";
 const API_KEY = "test_9665ee96502b66eba3294ba110fdc2170f4d92a2262688c9ed8fd87516511cc9efe8d04e6d233bd35cf2fabdeb93fb0d";
 
+export interface ItemOption {
+  option_type: string;
+  option_sub_type: string | null;
+  option_value: string;
+  option_value2: string | null;
+  option_desc: string | null;
+}
+
+export interface RawAuctionItem {
+  item_name: string;
+  item_display_name: string;
+  item_count: number;
+  auction_price_per_unit: number;
+  date_auction_expire: string;
+  item_option: ItemOption[];
+}
+
 export interface AuctionItem {
   itemId: string;
   itemName: string;
+  displayName: string;
+  count: number;
   price: number;
+  expireDate: string;
+  options: ItemOption[];
 }
 
 export interface AuctionListResponse {
@@ -12,7 +33,7 @@ export interface AuctionListResponse {
 }
 
 export interface KeywordSearchResponse {
-  auction_item: AuctionItem[];
+  auction_item: RawAuctionItem[];
 }
 
 /**
@@ -23,7 +44,6 @@ export const fetchAuctionList = async (
 ): Promise<AuctionListResponse | null> => {
   try {
     const url = `${API_BASE_URL}/list?item_name=${encodeURIComponent(itemName)}`;
-
     const response = await fetch(url, {
       method: "GET",
       headers: {
@@ -31,15 +51,28 @@ export const fetchAuctionList = async (
         "Content-Type": "application/json",
       },
     });
-
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
-
-    const data: AuctionListResponse = await response.json();
-    return data;
+    const data = await response.json();
+    if (data && data.auctionItems && Array.isArray(data.auctionItems)) {
+      const auctionItems: AuctionItem[] = data.auctionItems.map(
+        (raw: RawAuctionItem) => ({
+          itemId: raw.item_name,
+          itemName: raw.item_name,
+          displayName: raw.item_display_name,
+          count: raw.item_count,
+          price: raw.auction_price_per_unit,
+          expireDate: raw.date_auction_expire,
+          options: raw.item_option,
+        })
+      );
+      return { auctionItems };
+    } else {
+      return null;
+    }
   } catch (error) {
-    console.error("Error fetching auction data:", error);
+    console.error("Error fetching auction list:", error);
     return null;
   }
 };
@@ -59,8 +92,6 @@ export const searchAuctionItems = async (keyword: string): Promise<AuctionItem[]
       formattedKeyword
     )}`;
 
-    console.log("🔹 API 요청:", url);
-
     const response = await fetch(url, {
       method: "GET",
       headers: {
@@ -69,19 +100,27 @@ export const searchAuctionItems = async (keyword: string): Promise<AuctionItem[]
       },
     });
 
-    console.log("🔹 응답 상태 코드:", response.status);
-
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
     const data: KeywordSearchResponse = await response.json();
     console.log("🔹 API 응답 데이터:", JSON.stringify(data, null, 2));
-
-    // API 구조에 따라 auction_item가 배열인지 확인 후 사용
-    return data && data.auction_item ? data.auction_item : [];
+    if (!data || !data.auction_item) return [];
+    const items: AuctionItem[] = data.auction_item.map(
+      (raw: RawAuctionItem) => ({
+        itemId: raw.item_name,
+        itemName: raw.item_name,
+        displayName: raw.item_display_name,
+        count: raw.item_count,
+        price: raw.auction_price_per_unit,
+        expireDate: raw.date_auction_expire,
+        options: raw.item_option,
+      })
+    );
+    return items;
   } catch (error) {
-    console.error("❌ API 요청 실패:", error);
+    console.error("Error in searchAuctionItems:", error);
     return [];
   }
 };
