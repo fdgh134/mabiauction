@@ -15,7 +15,7 @@ export interface RawAuctionItem {
   item_count: number;
   auction_price_per_unit: number;
   date_auction_expire: string;
-  item_option: ItemOption[];
+  item_option: ItemOption[] | null;
 }
 
 export interface AuctionItem {
@@ -25,7 +25,13 @@ export interface AuctionItem {
   count: number;
   price: number;
   expireDate: string;
-  options: ItemOption[];
+  options?: Array<{
+    option_type: string;
+    option_sub_type?: string;
+    option_desc?: string;
+    option_value: string;
+    option_value2?: string;
+  }>;
 }
 
 export interface AuctionListResponse {
@@ -39,42 +45,20 @@ export interface KeywordSearchResponse {
 /**
  * 경매장 리스트 가져오기 (GET 요청)
  */
-export const fetchAuctionList = async (
-  itemName: string = "롱 소드"
-): Promise<AuctionListResponse | null> => {
-  try {
-    const url = `${API_BASE_URL}/list?item_name=${encodeURIComponent(itemName)}`;
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        "x-nxopen-api-key": API_KEY,
-        "Content-Type": "application/json",
-      },
-    });
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    const data = await response.json();
-    if (data && data.auctionItems && Array.isArray(data.auctionItems)) {
-      const auctionItems: AuctionItem[] = data.auctionItems.map(
-        (raw: RawAuctionItem) => ({
-          itemId: raw.item_name,
-          itemName: raw.item_name,
-          displayName: raw.item_display_name,
-          count: raw.item_count,
-          price: raw.auction_price_per_unit,
-          expireDate: raw.date_auction_expire,
-          options: raw.item_option,
-        })
-      );
-      return { auctionItems };
-    } else {
-      return null;
-    }
-  } catch (error) {
-    console.error("Error fetching auction list:", error);
-    return null;
+export async function fetchAuctionList(keyword: string | null, categoryCode: number) {
+  const params = new URLSearchParams();
+  if (keyword && keyword.trim() !== "") {
+    params.append("item_name", keyword);
   }
+  // categoryCode가 0이 아니면 카테고리 필터를 추가합니다.
+  if (categoryCode) {
+    params.append("auction_item_category", categoryCode.toString());
+  }
+  const response = await fetch(`https://open.api.nexon.com/mabinogi/v1/auction/list?${params.toString()}`);
+  if (!response.ok) {
+    throw new Error(`HTTP error! Status: ${response.status}`);
+  }
+  return await response.json();
 };
 
 /**
@@ -107,17 +91,21 @@ export const searchAuctionItems = async (keyword: string): Promise<AuctionItem[]
     const data: KeywordSearchResponse = await response.json();
     console.log("🔹 API 응답 데이터:", JSON.stringify(data, null, 2));
     if (!data || !data.auction_item) return [];
-    const items: AuctionItem[] = data.auction_item.map(
-      (raw: RawAuctionItem) => ({
-        itemId: raw.item_name,
-        itemName: raw.item_name,
-        displayName: raw.item_display_name,
-        count: raw.item_count,
-        price: raw.auction_price_per_unit,
-        expireDate: raw.date_auction_expire,
-        options: raw.item_option,
-      })
-    );
+    const items: AuctionItem[] = data.auction_item.map((raw: RawAuctionItem) => ({
+      itemId: raw.item_name,
+      itemName: raw.item_name,
+      displayName: raw.item_display_name,
+      count: raw.item_count,
+      price: raw.auction_price_per_unit,
+      expireDate: raw.date_auction_expire,
+      options: (raw.item_option || []).map((option) => ({
+        option_type: option.option_type,
+        option_sub_type: option.option_sub_type !== null ? option.option_sub_type : undefined,
+        option_desc: option.option_desc !== null ? option.option_desc : undefined,
+        option_value: option.option_value,
+        option_value2: option.option_value2 !== null ? option.option_value2 : undefined,
+      }))
+    }));
     return items;
   } catch (error) {
     console.error("Error in searchAuctionItems:", error);
