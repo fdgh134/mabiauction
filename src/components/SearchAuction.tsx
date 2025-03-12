@@ -7,7 +7,7 @@ interface SearchAuctionProps {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   setError: React.Dispatch<React.SetStateAction<string | null>>;
   onKeywordChange?: (kw: string) => void;
-  selectedCategory: number | null;
+  selectedCategory: string | null;
 }
 
 export default function SearchAuction({
@@ -28,20 +28,22 @@ export default function SearchAuction({
     setError(null);
     try {
       if (selectedCategory) {
-        // 카테고리가 선택된 경우: 검색어와 함께 선택된 카테고리 필터를 사용
+        // 카테고리가 선택된 경우: category와 item_name 기반 검색
         const data = await fetchAuctionList(keyword, selectedCategory);
-        if (data && data.auctionItems && data.auctionItems.length > 0) {
-          onSearchComplete(data.auctionItems);
+        console.log("카테고리 검색 결과:", data.auction_item);
+        if (data && data.auction_item && data.auction_item.length > 0) {
+          onSearchComplete(data.auction_item);
         } else {
           onSearchComplete([], "검색 결과가 없습니다.");
         }
       } else {
-        // 카테고리가 선택되지 않은 경우: 전체 아이템 중 검색어로 검색
+        // 카테고리 미선택 시: 단순 키워드 검색
         const data = await searchAuctionItems(keyword);
-        if (data.length === 0) {
+        console.log("키워드 검색 결과:", data);
+        if (data.auction_item.length === 0) {
           onSearchComplete([], "검색 결과가 없습니다.");
         } else {
-          onSearchComplete(data);
+          onSearchComplete(data.auction_item);
         }
       }
     } catch (err) {
@@ -61,7 +63,6 @@ export default function SearchAuction({
   return (
     <>
       <div className="p-4">
-        <h2 className="text-2xl font-bold mb-4">경매장 검색</h2>
         <div className="flex items-center mb-4 gap-2">
           <input
             type="text"
