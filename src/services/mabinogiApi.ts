@@ -37,13 +37,15 @@ export async function fetchAuctionList(
   url.searchParams.append("auction_item_category", categoryStr);
   
   // 길이가 2 이상일 때만 item_name 파라미터를 추가
-  if (trimmedName.length >= 2) {
+  if (trimmedName && trimmedName.length >= 2) {
     url.searchParams.append("item_name", trimmedName);
   }
 
   if (cursor) {
     url.searchParams.append("cursor", cursor);
   }
+
+  console.log("API 요청 URL:", url.toString());
 
   const response = await fetch(url.toString(), {
     headers: {
