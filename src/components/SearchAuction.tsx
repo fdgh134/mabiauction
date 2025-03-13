@@ -15,7 +15,7 @@ export default function SearchAuction({
   setLoading,
   setError,
   onKeywordChange,
-  selectedCategory
+  selectedCategory,
 }: SearchAuctionProps): JSX.Element {
   const [keyword, setKeyword] = useState<string>("");
 
@@ -27,16 +27,26 @@ export default function SearchAuction({
     setLoading(true);
     setError(null);
     try {
-      // 카테고리 선택 여부와 관계없이 키워드 검색 사용
-      const data = await searchAuctionItems(keyword);
-      console.log("키워드 검색 결과:", data);
-      
-      if (data.auction_item.length === 0) {
-        onSearchComplete([], "검색 결과가 없습니다.");
+      // 카테고리가 선택되어 있는 경우 해당 카테고리에서 검색
+      if (selectedCategory) {
+        const data = await fetchAuctionList(keyword, selectedCategory);
+        console.log("카테고리 내 키워드 검색 결과:", data);
+        
+        if (data.auction_item.length === 0) {
+          onSearchComplete([], `'${selectedCategory}' 카테고리에서 '${keyword}' 검색 결과가 없습니다.`);
+        } else {
+          onSearchComplete(data.auction_item);
+        }
       } else {
-        // 카테고리가 선택된 경우, 결과 중에서 해당 카테고리 관련 아이템 필터링 가능
-        // (API에서 지원한다면 구현)
-        onSearchComplete(data.auction_item);
+        // 카테고리가 선택되지 않은 경우 일반 키워드 검색
+        const data = await searchAuctionItems(keyword);
+        console.log("키워드 검색 결과:", data);
+        
+        if (data.auction_item.length === 0) {
+          onSearchComplete([], "검색 결과가 없습니다.");
+        } else {
+          onSearchComplete(data.auction_item);
+        }
       }
     } catch (err) {
       console.error(err);
