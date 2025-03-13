@@ -28,7 +28,8 @@ export default function SearchAuction({
     setError(null);
     try {
       if (selectedCategory) {
-        // 카테고리가 선택된 경우: category와 item_name 기반 검색
+        // 카테고리가 선택되어 있으면, 키워드 검색 후 반환된 아이템 중에서
+        // 해당 카테고리와 일치하는 아이템만 필터링합니다.
         const data = await fetchAuctionList(keyword, selectedCategory);
         console.log("카테고리 검색 결과:", data.auction_item);
         if (data && data.auction_item && data.auction_item.length > 0) {

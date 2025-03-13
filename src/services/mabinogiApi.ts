@@ -11,7 +11,7 @@ export interface AuctionItem {
   date_auction_expire: string;        
   item_count: number;              
   item_display_name: string;       
-  item_name: string; 
+  item_name: string;
   item_option?: OptionType[];
 }
 
@@ -26,23 +26,19 @@ const DEFAULT_CURSOR = "";
 
 export async function fetchAuctionList(
   item_name: string,
-  auction_item_category: string | number,
+  auction_item_category: string,
   cursor: string = DEFAULT_CURSOR
 ): Promise<AuctionResponse> {
-  const categoryStr = typeof auction_item_category === "string" 
-    ? auction_item_category.trim() 
-    : String(auction_item_category).trim();
-  
-  // 두 파라미터 모두 비어있으면 에러 처리
-  if (!categoryStr && !item_name.trim()) {
-    throw new Error("카테고리와 아이템 이름 중 하나 이상은 필수 입력값입니다.");
-  }
-  
+  const categoryStr = String(auction_item_category).trim();
+  const trimmedName = item_name.trim();
   const url = new URL(`${BASE_URL}/list`);
+  
+  // 항상 카테고리 파라미터는 포함
   url.searchParams.append("auction_item_category", categoryStr);
-
-  if (item_name.trim() !== "") {
-    url.searchParams.append("item_name", item_name.trim());
+  
+  // 길이가 2 이상일 때만 item_name 파라미터를 추가
+  if (trimmedName.length >= 2) {
+    url.searchParams.append("item_name", trimmedName);
   }
 
   if (cursor) {
@@ -55,12 +51,16 @@ export async function fetchAuctionList(
       "x-nxopen-api-key": API_KEY,
     },
   });
+  console.log("API 호출 결과:", response);
+  if (response.status === 400) {
+    return { auction_item: [], next_cursor: null };
+  }
 
   if (!response.ok) {
     throw new Error(`경매장 리스트 호출 실패: ${response.statusText}`);
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as AuctionResponse;
   return data;
 }
 

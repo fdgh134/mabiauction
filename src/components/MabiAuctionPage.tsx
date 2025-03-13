@@ -25,7 +25,6 @@ export default function MabinogiAuctionPage() {
         
         // data.auction_item가 배열 형태로 넘어옴
         if (data.auction_item && data.auction_item.length > 0) {
-          // 화면에 뿌릴 데이터는 auctionData라는 state에 저장
           setAuctionData(data.auction_item);
         } else {
           setAuctionData([]);
