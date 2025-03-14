@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { fetchAuctionList, searchAuctionItems, AuctionItem } from "../services/mabinogiApi";
 import type { JSX } from "react";
+import { Category } from "../constants/categoryMap";
 
 interface SearchAuctionProps {
   onSearchComplete: (results: AuctionItem[], errorMsg?: string) => void;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   setError: React.Dispatch<React.SetStateAction<string | null>>;
   onKeywordChange?: (kw: string) => void;
-  selectedCategory: string | null;
+  selectedCategory: Category | null;
 }
 
 export default function SearchAuction({
@@ -29,13 +30,19 @@ export default function SearchAuction({
     try {
       // 카테고리가 선택되어 있는 경우 해당 카테고리에서 검색
       if (selectedCategory) {
-        const data = await fetchAuctionList(keyword, selectedCategory);
-        console.log("카테고리 내 키워드 검색 결과:", data);
-        
-        if (data.auction_item.length === 0) {
-          onSearchComplete([], `'${selectedCategory}' 카테고리에서 '${keyword}' 검색 결과가 없습니다.`);
+        const data = await fetchAuctionList("", selectedCategory.label);
+        console.log("카테고리 전체 검색 결과:", data);
+
+        const filteredItems = data.auction_item.filter((item: AuctionItem) =>
+          item.item_name.toLowerCase().includes(keyword.toLowerCase()) ||
+          item.item_display_name.toLowerCase().includes(keyword.toLowerCase())
+        );
+        console.log("로컬 필터링 결과:", filteredItems);
+
+        if (filteredItems.length === 0) {
+          onSearchComplete([], `'${selectedCategory.label}' 카테고리에서 '${keyword}' 검색 결과가 없습니다.`);
         } else {
-          onSearchComplete(data.auction_item);
+          onSearchComplete(filteredItems);
         }
       } else {
         // 카테고리가 선택되지 않은 경우 일반 키워드 검색

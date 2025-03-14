@@ -95,7 +95,7 @@ export default function MabinogiAuctionPage() {
           setLoading={setLoading}
           setError={setError}
           onKeywordChange={(kw: string) => setKeyword(kw)}
-          selectedCategory={selectedCategory ? selectedCategory.label : null}
+          selectedCategory={selectedCategory}
         />
       </div>
       <div className="flex gap-4 p-4">

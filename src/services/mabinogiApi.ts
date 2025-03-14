@@ -26,7 +26,7 @@ const DEFAULT_CURSOR = "";
 
 export async function fetchAuctionList(
   item_name: string,
-  auction_item_category: string,
+  auction_item_category: string | number,
   cursor: string = DEFAULT_CURSOR
 ): Promise<AuctionResponse> {
   const categoryStr = String(auction_item_category).trim();
