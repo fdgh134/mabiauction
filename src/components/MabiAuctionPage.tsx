@@ -56,12 +56,17 @@ export default function MabinogiAuctionPage() {
     setError(null);
     setSelectedItem(null);
     try {
+      const data = await fetchAuctionList(keyword, cat.label);
+      console.log("키워드와 카테고리 결합 검색:", data);
+      let filteredItems = data.auction_item;
+
       // 검색 키워드가 있는 경우 키워드와 카테고리를 함께 사용
       if (keyword && keyword.trim() !== "") {
-        const data = await fetchAuctionList(keyword, cat.label);
-        console.log("키워드와 카테고리 결합 검색:", data);
-        
-        if (data.auction_item && data.auction_item.length > 0) {
+        filteredItems = filteredItems.filter((item: AuctionItem) =>
+          item.item_name.toLowerCase().includes(keyword.toLowerCase()) ||
+          item.item_display_name.toLowerCase().includes(keyword.toLowerCase())
+        );
+        if (filteredItems && filteredItems.length > 0) {
           setAuctionData(data.auction_item);
         } else {
           setAuctionData([]);
@@ -72,8 +77,8 @@ export default function MabinogiAuctionPage() {
         const data = await fetchAuctionList("", cat.label);
         console.log("카테고리 API 응답:", data);
         
-        if (data.auction_item && data.auction_item.length > 0) {
-          setAuctionData(data.auction_item);
+        if (filteredItems && filteredItems.length > 0) {
+          setAuctionData(filteredItems);
         } else {
           setAuctionData([]);
           setError("해당 카테고리 매물이 없습니다.");
